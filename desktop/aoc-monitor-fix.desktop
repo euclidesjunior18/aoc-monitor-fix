@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AOC Monitor Fix
+GenericName=Ajuste de Tela AOC
+Comment=Corrige proporção e faixas pretas no monitor AOC (VGA)
+Exec=/home/junior/.local/bin/aoc-monitor-fix
+Icon=preferences-desktop-display
+Terminal=false
+Categories=Settings;HardwareSettings;Utility;
+Keywords=monitor;aoc;vga;tela;resolucao;escala;faixas pretas;
+StartupNotify=true
