@@ -14,6 +14,22 @@ from gi.repository import Gtk, Gdk, GLib
 
 AUTOSTART_PATH = os.path.expanduser("~/.config/autostart/aoc-fix-display.desktop")
 
+def get_connected_output():
+    try:
+        env = os.environ.copy()
+        res = subprocess.run(["xrandr"], capture_output=True, text=True, env=env)
+        for line in res.stdout.splitlines():
+            if " connected" in line and "VGA" in line:
+                return line.split()[0]
+        for line in res.stdout.splitlines():
+            if " connected" in line:
+                return line.split()[0]
+    except Exception:
+        pass
+    return "VGA-0"
+
+OUTPUT_NAME = get_connected_output()
+
 # Resoluções principais mais comuns para monitor Full HD / 16:9 / 16:10
 COMMON_RESOLUTIONS = [
     ("1920x1080", "1920x1080 (Full HD 16:9 - Padrão)"),
@@ -198,7 +214,7 @@ class MonitorFixApp(Gtk.Window):
         sx = float(self.scale_x)
         sy = float(self.scale_y)
         transform_arg = f"{sx:.4f},0,{tx:.1f},0,{sy:.4f},{ty:.1f},0,0,1"
-        ok, out = run_cmd(["xrandr", "--output", "VGA-1", "--transform", transform_arg])
+        ok, out = run_cmd(["xrandr", "--output", OUTPUT_NAME, "--transform", transform_arg])
         self.update_pos_label()
         if self.chk_autostart.get_active():
             self.save_autostart_file()
@@ -247,7 +263,7 @@ class MonitorFixApp(Gtk.Window):
         self.previous_scale_x = self.scale_x
 
         self.status_label.set_markup(f"<span color='#3465a4'>Testando resolução {target_mode}...</span>")
-        ok, out = run_cmd(["xrandr", "--output", "VGA-1", "--mode", target_mode])
+        ok, out = run_cmd(["xrandr", "--output", OUTPUT_NAME, "--mode", target_mode])
         if not ok:
             self.status_label.set_markup(f"<span color='#cc0000'>Falha ao alterar resolução: {out}</span>")
             return
@@ -327,7 +343,7 @@ class MonitorFixApp(Gtk.Window):
 
     def revert_previous_settings(self):
         self.status_label.set_markup(f"<span color='#ce5c00'>Revertendo para a resolução anterior ({self.previous_res})...</span>")
-        run_cmd(["xrandr", "--output", "VGA-1", "--mode", self.previous_res])
+        run_cmd(["xrandr", "--output", OUTPUT_NAME, "--mode", self.previous_res])
         self.current_res = self.previous_res
         self.offset_x = self.previous_offset_x
         self.offset_y = self.previous_offset_y
@@ -346,11 +362,11 @@ class MonitorFixApp(Gtk.Window):
         self.current_res = "1920x1080"
         
         # 1. Reset transform
-        run_cmd(["xrandr", "--output", "VGA-1", "--transform", "none"])
+        run_cmd(["xrandr", "--output", OUTPUT_NAME, "--transform", "none"])
         # 2. Reset scaling mode
-        run_cmd(["xrandr", "--output", "VGA-1", "--set", "scaling mode", "None"])
+        run_cmd(["xrandr", "--output", OUTPUT_NAME, "--set", "scaling mode", "None"])
         # 3. Auto padrão
-        ok, out = run_cmd(["xrandr", "--output", "VGA-1", "--auto", "--mode", "1920x1080", "--rate", "60.00"])
+        ok, out = run_cmd(["xrandr", "--output", OUTPUT_NAME, "--auto", "--mode", "1920x1080", "--rate", "60.00"])
         
         self.update_pos_label()
         if ok:
@@ -396,16 +412,16 @@ def main():
             ox = float(sys.argv[3])
             oy = float(sys.argv[4])
             sx = float(sys.argv[5])
-            run_cmd(["xrandr", "--output", "VGA-1", "--mode", mode])
+            run_cmd(["xrandr", "--output", OUTPUT_NAME, "--mode", mode])
             t_arg = f"{sx:.4f},0,{ox:.1f},0,1.0000,{oy:.1f},0,0,1"
-            run_cmd(["xrandr", "--output", "VGA-1", "--transform", t_arg])
+            run_cmd(["xrandr", "--output", OUTPUT_NAME, "--transform", t_arg])
         except Exception as e:
             pass
         sys.exit(0)
     elif len(sys.argv) > 1 and sys.argv[1] == "--reset":
-        run_cmd(["xrandr", "--output", "VGA-1", "--transform", "none"])
-        run_cmd(["xrandr", "--output", "VGA-1", "--set", "scaling mode", "None"])
-        run_cmd(["xrandr", "--output", "VGA-1", "--auto", "--mode", "1920x1080", "--rate", "60.00"])
+        run_cmd(["xrandr", "--output", OUTPUT_NAME, "--transform", "none"])
+        run_cmd(["xrandr", "--output", OUTPUT_NAME, "--set", "scaling mode", "None"])
+        run_cmd(["xrandr", "--output", OUTPUT_NAME, "--auto", "--mode", "1920x1080", "--rate", "60.00"])
         sys.exit(0)
 
     app = MonitorFixApp()
